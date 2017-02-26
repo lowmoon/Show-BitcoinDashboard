@@ -1,9 +1,16 @@
+#
+#30-Day Chart
+#
+
 $PriceData = [System.Collections.Specialized.OrderedDictionary]@{}
 
 $Data = (Invoke-RestMethod -Method Get -Uri 'https://api.coindesk.com/v1/bpi/historical/close.json' -ContentType 'application/json').bpi | Out-String
 
-$Data.Trim() -split "`r`n" | ForEach-Object {
-    $line = $_ -split ':'
+$Data = $Data.Trim() -split "`r`n" 
+
+foreach ($Item in $Data)
+{
+    $line = $Item -split ':'
     $PriceData.Add($line[0], $line[1])
 }
 
@@ -18,7 +25,7 @@ $Chart.Height = 400
 $ChartArea = New-Object System.Windows.Forms.DataVisualization.Charting.ChartArea
 $Chart.ChartAreas.Add($ChartArea)
 
-# Set the chart formatting options
+
 [void]$Chart.Titles.Add('Bitcoin Price History (30 day)')
 $ChartArea.AxisX.Title = 'Date'
 $ChartArea.AxisY.Title = 'Price (USD)'
@@ -29,7 +36,7 @@ $ChartArea.AxisY.Interval = 50
 $ChartArea.AxisX.Interval = 1
 $ChartArea.AxisY.IsStartedFromZero = 0
 
-# Data series
+
 [void]$Chart.Series.Add('Price')
 $Chart.Series['Price'].ChartType = "Line"
 $Chart.Series['Price'].BorderWidth = 3
@@ -37,7 +44,7 @@ $Chart.Series['Price'].ChartArea = "ChartArea1"
 $Chart.Series['Price'].Color = "#62B5CC"
 $Chart.Series['Price'].Points.DataBindXY($PriceData.Keys, $PriceData.Values)
 
-# Display the chart on a form 
+
 $Chart.Anchor = [System.Windows.Forms.AnchorStyles]::Bottom -bor
     [System.Windows.Forms.AnchorStyles]::Right -bor 
     [System.Windows.Forms.AnchorStyles]::Top -bor 
@@ -49,3 +56,31 @@ $Form.Height = 440
 $Form.Controls.Add($Chart)
 $Form.Add_Shown({ $Form.Activate() })
 $Form.ShowDialog()
+
+#
+# Current selected market exchange rates
+#
+
+$ExchangeRates = @()
+
+$AllProtocols = [System.Net.SecurityProtocolType]'Ssl3,Tls,Tls11,Tls12'
+[System.Net.ServicePointManager]::SecurityProtocol = $AllProtocols
+
+$CoinbaseBuy = Invoke-RestMethod -Uri https://coinbase.com/api/v1/prices/buy
+$CoinbaseSell = Invoke-RestMethod -Uri https://coinbase.com/api/v1/prices/sell
+$CoinbaseRates = New-Object PSObject -property  @{BuyPrice = $Coinbasebuy.total.amount; SellPrice = $Coinbasesell.total.amount; Exchange = "Coinbase"}
+$ExchangeRates += $CoinbaseRates
+
+$CampBXRates = Invoke-RestMethod -Uri http://campbx.com/api/xticker.php
+$BX = New-Object PSObject -property  @{BuyPrice = $CampBXRates."Best Ask"; SellPrice =  $CampBXRates."Best Bid"; Exchange = "Camp BX"}
+$ExchangeRates += $BX
+
+$BTCERates = Invoke-RestMethod -Uri https://btc-e.com/api/2/btc_usd/ticker
+$BTCE = New-Object PSObject -property  @{BuyPrice = $BTCERates.ticker.buy; SellPrice = $BTCERates.ticker.sell; Exchange = "BTC-E"}
+$ExchangeRates += $BTCE
+
+$BitStampRates = Invoke-RestMethod -Uri https://www.bitstamp.net/api/v2/ticker/btcusd
+$BitStamp = New-Object PSObject -property @{BuyPrice = $BitStampRates.bid; SellPrice = $BitStampRates.ask; Exchange = "BitStamp"}
+$ExchangeRates += $BitStamp
+
+$ExchangeRates

@@ -83,4 +83,26 @@ $BitStampRates = Invoke-RestMethod -Uri https://www.bitstamp.net/api/v2/ticker/b
 $BitStamp = New-Object PSObject -property @{BuyPrice = $BitStampRates.bid; SellPrice = $BitStampRates.ask; Exchange = "BitStamp"}
 $ExchangeRates += $BitStamp
 
+#no value names on reponses
+$BitFinexRates = Invoke-RestMethod -Uri https://api.bitfinex.com/v2/ticker/tBTCUSD
+$BitFinex = New-Object PSObject -property @{BuyPrice = $BitFinexRates.}
+
+#Print Rates - needs graph
 $ExchangeRates
+
+
+
+
+#Candlestick  - needs more... candle. 
+[void][Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms")
+[void][Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms.Datavisualization")
+
+
+$Chart = New-Object System.Windows.Forms.DataVisualization.Charting.Chart
+$Chart.Width = 650
+$Chart.Height = 400
+
+$ChartArea = New-Object System.Windows.Forms.DataVisualization.Charting.ChartArea
+$Chart.ChartAreas.Add($ChartArea)
+
+[void]$Chart.Titles.Add('Bitcoin Exchange Candlestick')
